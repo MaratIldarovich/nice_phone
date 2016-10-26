@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Nice phone demo</title>
+    <script type="text/javascript" src="nice.js"></script>
+</head>
+<body>
+    <input type="text" id="testInput">
+    <script>
+        var nicePhone = new NicePhoneInput(document.getElementById('testInput'), {
+            pattern : '+7 '
+        });
+    </script>
+</body>
+</html>
