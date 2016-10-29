@@ -7,10 +7,12 @@
  */
 function NicePhoneInput(params){
     let element = params.element,
+        emptyChar = params.emptyChar,
         pattern = params.pattern,
+        filterRegExp = /[^0-9]/g,
         firstSyms = '',
         allowedKeys = ['Delete','Backspace','ArrowLeft','ArrowRight','F5'],
-        oldPos;
+        oldPos = 0;
 
     for (var i = 0; i < pattern.length; i++) {
         let sym = pattern[i];
@@ -18,11 +20,38 @@ function NicePhoneInput(params){
         firstSyms += sym;
     }
 
-    pattern = deleteFirstSyms(pattern);
-    console.log(pattern);
+    function filterStr(str){
+        if (str.lastIndexOf(firstSyms) === 0){
+            str = str.slice(firstSyms.length);
+        }
+        str = str.replace(filterRegExp,'')
+        return str;
+    }
+
+    function passStr(str){
+        str = filterStr(str);
+        var newStr = '';
+        var newPos = oldPos + 1;
+
+        for (var i = 0, j = 0; (i < str.length || emptyChar) && j < pattern.length; i++, j++) {
+            let sym = str[i] || emptyChar;
+
+            while (pattern[j] !== 'n'){
+                newStr += pattern[j];
+                j++;
+                if (newPos === j) newPos++;
+            }
+
+            newStr += sym;
+        }
+
+        return {newPos, newStr};
+    }
 
     element.addEventListener('keydown', function(e){
-        if (!e.ctrlKey && allowedKeys.indexOf(e.key) === -1 && !(e.key * 1 >= 0) && !e.metaKey){
+        var keyIsNumber = e.key * 1 >= 0;
+
+        if (!e.ctrlKey && allowedKeys.indexOf(e.key) === -1 && !keyIsNumber && !e.metaKey){
             e.preventDefault();
             return;
         }
@@ -36,38 +65,8 @@ function NicePhoneInput(params){
         var pastedText = cData.getData('text');
     });
 
-    function deleteFirstSyms(str){
-        if (str.lastIndexOf(firstSyms) === 0){
-            str = str.slice(firstSyms.length);
-        }
-        return str;
-    }
-
-    function processStr(str){
-        str = deleteFirstSyms(str);
-        str = str.replace(/[^0-9]/g,'');
-        var newStr = '';
-        var newPos = oldPos + 1;
-
-        for (var i = 0, j = 0; i < str.length && j < pattern.length; i++, j++) {
-            let sym = str[i];
-
-            while (pattern[j] !== 'n'){
-                newStr += pattern[j];
-                j++;
-                if (newPos === j) newPos++;
-            }
-
-            newStr += sym;
-        }
-
-        newStr = firstSyms + newStr;
-
-        return {newPos, newStr};
-    }
-
     element.addEventListener('input', function(e){
-        var data = processStr(this.value);
+        var data = passStr(this.value);
 
         this.value = data.newStr;
         this.setSelectionRange(data.newPos, data.newPos);
