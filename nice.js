@@ -3,6 +3,7 @@
  * @param params {Object}
  * @param params.element {HTMLElement}
  * @param params.pattern {String} - pattern of inputed phone
+ * @param params.emptyChar {String} - replace empty places in pattern
  * @constructor
  */
 function NicePhoneInput(params){
