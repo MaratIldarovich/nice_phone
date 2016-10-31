@@ -8,7 +8,7 @@
 - Vanilla JS
 - No cursor problems
 
-**bower install nice_phone**
+### bower install nice_phone
 
 Example of using:
 
