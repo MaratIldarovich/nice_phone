@@ -8,53 +8,54 @@
  */
 class NicePhoneInput {
     filterStr(str) {
-        if (str.lastIndexOf(this.firstSyms) === 0) {
-            str = str.slice(this.firstSyms.length);
+        if (str.lastIndexOf(this.specials[0]) === 0) {
+            str = str.slice(this.specials[0].length);
         }
-        str = str.replace(this.filterRegExp, '')
+        str = str.replace(this.filterRegExp, '');
         return str;
     }
 
-    passStr(userStr, key) {
+    passStr(userStr, key, pastedText) {
         var str = this.filterStr(userStr);
         var newStr = '';
-        var newPos = this.curPos;
 
-        switch (key) {
+        var newPos = this.oldPos;
+
+        switch (key){
             case 'Backspace':
-                newPos--;
+                newPos = this.oldPos - 1;
                 break;
             case 'Delete':
+                newPos = this.oldPos;
                 break;
             default:
-                newPos++;
+                newPos = this.oldPos + ((pastedText && pastedText.length) || 1);
                 break;
         }
 
         // если есть параметр emptyChar, полное прохождение строки с заменой n на emptyChar
-        for (var i = 0, j = 0; (i < str.length || this.emptyChar) && j < this.pattern.length; i++, j++) {
+        for (let i = 0, j = 0; (i < str.length || this.emptyChar) && j < this.pattern.length; i++, j++) {
             let sym = str[i] || this.emptyChar;
 
             while (this.pattern[j] !== 'n') {
                 newStr += this.pattern[j];
                 j++;
-                if (newPos === j) {
-                    switch (key) {
-                        case 'Backspace':
-                            newPos--;
-                            break;
-                        case 'Delete':
-                            break;
-                        default:
-                            newPos++;
-                            break;
-                    }
-                }
             }
 
             newStr += sym;
         }
 
+        for (let i = 0; i < this.specials.length; i++) {
+            let specStr = this.specials[i];
+            console.log(specStr, this.specials, i);
+
+            for (let j = this.oldPos; j < newPos; j++) {
+                let specSymbolAhead = newStr.substr(j, specStr.length) === specStr;
+                if (specSymbolAhead) {
+                    newPos = newPos + specStr.length;
+                }
+            }
+        }
 
         return {newPos, newStr};
     }
@@ -69,11 +70,11 @@ class NicePhoneInput {
     }
 
     _isCorrectPos() {
-        return this.curPos > this.firstSyms.length
+        return this.element.selectionStart > this.specials[0].length
     }
 
     _setMinPos() {
-        this._setPos(this.firstSyms.length);
+        this._setPos(this.specials[0].length);
     }
 
     constructor(params) {
@@ -83,16 +84,23 @@ class NicePhoneInput {
         this.pattern = params.pattern;
         this.lastKey = null;
         this.filterRegExp = /[^0-9]/g;
-        this.firstSyms = '';
         this.allowedKeys = ['Delete', 'Backspace', 'ArrowLeft', 'ArrowRight', 'F5'];
-        this.curPos = 0;
-        this.oldStr = '';
+        this.oldPos = 0;
+        this.specials = [];
 
-        for (var i = 0; i < this.pattern.length; i++) {
+        for (let i = 0, j=0; i < this.pattern.length; i++) {
             let sym = this.pattern[i];
-            if (sym === 'n') break;
-            this.firstSyms += sym;
+            if (sym === 'n') {
+                j++;
+            }
+            else{
+                console.log(sym);
+                this.specials[j] = this.specials[j] || '';
+                this.specials[j] += sym;
+            }
         }
+
+        console.log(this.specials);
 
         this.element.addEventListener('click', function (e) {
             if (!self._isCorrectPos()) {
@@ -110,7 +118,7 @@ class NicePhoneInput {
             }
 
             self.lastKey = e.key;
-            self.curPos = this.selectionStart;
+            self.oldPos = this.selectionStart;
             self.oldStr = this.value;
 
             switch (e.key) {
@@ -125,15 +133,20 @@ class NicePhoneInput {
         });
 
         this.element.addEventListener('paste', function (e) {
-            self.curPos = this.selectionStart;
+            this.oldPos = this.selectionStart;
             var cData = e.clipboardData;
             var pastedText = cData.getData('text');
+            e.preventDefault();
+            var newText = this.value.substr(0,this.oldPos) + pastedText + this.value.substr(this.oldPos + pastedText.length);
+            var newData = self.passStr(newText, null, pastedText);
+            this.value = newData.newStr;
+            self._setPos(newData.newPos, newData.newPos);
         });
 
         this.element.addEventListener('input', function (e) {
-            var data = self.passStr(this.value, self.lastKey);
-            this.value = data.newStr;
-            self._setPos(data.newPos, data.newPos);
+            var newData = self.passStr(this.value, self.lastKey);
+            this.value = newData.newStr;
+            self._setPos(newData.newPos, newData.newPos);
         });
 
         this.updateFromRaw(params.defaultRaw);
