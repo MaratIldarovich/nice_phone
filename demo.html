@@ -8,14 +8,12 @@
 <body>
     <input type="text" id="testInput">
     <script>
-        var nicePhone = new NicePhoneInput({
+        var nicePhone = new window.NicePhone({
             element : document.getElementById('testInput'),
             pattern : '+7 (nnn) nnn-nn-nn',
             emptyChar : '.',
             defaultRaw : '1234'
         });
-
-        //nicePhone.updateFromRaw('9625555598');
     </script>
 </body>
 </html>
