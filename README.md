@@ -1,3 +1,5 @@
+# nice_phone
+
 - Lightweight
 - Support copy/paste, delete, backspace
 - Support all symbols in patterns :
