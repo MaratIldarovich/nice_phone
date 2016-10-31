@@ -23,10 +23,8 @@ class NicePhoneInput {
         switch (key) {
             case 'Backspace':
                 newPos--;
-                //str = str.slice(-1);
                 break;
             case 'Delete':
-                //str = str.slice(-1);
                 break;
             default:
                 newPos++;
@@ -110,19 +108,20 @@ class NicePhoneInput {
                 e.preventDefault();
                 return;
             }
-            
+
+            self.lastKey = e.key;
+            self.curPos = this.selectionStart;
+            self.oldStr = this.value;
+
             switch (e.key) {
                 case 'ArrowLeft':
+                case 'Backspace':
                     if (!self._isCorrectPos()) {
                         e.preventDefault();
                         self._setMinPos();
                     }
                     break;
             }
-
-            self.lastKey = e.key;
-            self.curPos = this.selectionStart;
-            self.oldStr = this.value;
         });
 
         this.element.addEventListener('paste', function (e) {
