@@ -1,0 +1,25 @@
+{
+  "name": "nice_phone",
+  "description": "Lightweight solution for decorate phone input",
+  "main": "nice.js",
+  "authors": [
+    "MaratI"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "nice_phone",
+    "mask",
+    "input",
+    "phone",
+    "pattern",
+    "light"
+  ],
+  "homepage": "https://github.com/MaratIldarovich/nice_phone",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
