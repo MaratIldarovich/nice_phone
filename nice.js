@@ -1,6 +1,8 @@
 (function(){
     const filterRegExp = /[^0-9]/g;
     const allowedKeys = ['Delete', 'Backspace', 'ArrowLeft', 'ArrowRight', 'F5'];
+    const PATTERN_NUMBER_SYM = 'n';
+
     /**
      * Creates new instance of nicePhone
      * @param params {Object}
@@ -27,7 +29,7 @@
             for (let i = 0, j = 0; (i < str.length || this.emptyChar) && j < this.pattern.length; i++, j++) {
                 let sym = str[i] || this.emptyChar;
 
-                while (this.pattern[j] !== 'n') {
+                while (this.pattern[j] !== PATTERN_NUMBER_SYM) {
                     newStr += this.pattern[j];
                     j++;
                 }
@@ -103,7 +105,7 @@
         }
 
         isValid(){
-            return this.element.value.indexOf(this.emptyChar) === -1;
+            return this.element.value.length === this.pattern.length;
         }
 
         constructor(params) {
@@ -119,7 +121,7 @@
             
 
             this.pattern
-                .split('n')
+                .split(PATTERN_NUMBER_SYM)
                 .filter((sym, indx, arr)=> sym && arr.indexOf(sym) === indx)
                 .forEach((str, indx)=> {
                     this.specials = this.specials.concat(indx === 0 ? str : str.split(''));
