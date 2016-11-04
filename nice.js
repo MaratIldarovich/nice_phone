@@ -9,7 +9,6 @@
      * @param params.element {HTMLElement}
      * @param params.pattern {String} - pattern of inputed phone
      * @param params.emptyChar {String} - replace empty places in pattern
-     * @param params.defaultRaw {String}
      * @constructor
      */
     class NicePhone {
@@ -23,6 +22,7 @@
 
         passStr(userStr) {
             var str = this.filterStr(userStr);
+
             var newStr = '';
 
             // если есть параметр emptyChar, полное прохождение строки с заменой n на emptyChar
@@ -45,25 +45,25 @@
             this.element.value = this.passStr(phone);
         }
 
-        _getNewPos(newStr, key, pastedText){
-            var newPos = this.oldPos;
+        _getNewPos(newStr, key, pastedText, oldPos){
+            var newPos;
 
             switch (key){
                 case 'Backspace':
-                    newPos = this.oldPos - 1;
+                    newPos = oldPos - 1;
                     break;
                 case 'Delete':
-                    newPos = this.oldPos;
+                    newPos = oldPos;
                     break;
                 default:
-                    newPos = this.oldPos + ((pastedText && pastedText.length) || 1);
+                    newPos = oldPos + ((pastedText && pastedText.length) || 1);
                     break;
             }
 
             for (let i = 0; i < this.specials.length; i++) {
                 let specStr = this.specials[i];
 
-                for (let j = this.oldPos; j < newPos; j++) {
+                for (let j = oldPos; j < newPos; j++) {
                     let specSymbolAhead = newStr.substr(j, specStr.length) === specStr;
                     if (specSymbolAhead) {
                         newPos = newPos + specStr.length;
@@ -78,34 +78,39 @@
             this.element.setSelectionRange(pos, pos);
         }
 
-        _isCorrectPos() {
-            if (this.emptyChar){
-                let pos = this.element.selectionStart - 1;
-                let symOnPos = this.element.value[pos];
+        _isCorrectPos(key) {
+            let pos = this.element.selectionStart;
+            let diff;
 
-                while (this.specials.indexOf(symOnPos) !== -1){
-                    pos--;
-                    symOnPos = this.element.value[pos];
-                }
+            switch(key){
+                case 'ArrowRight':
+                    diff = 1;
+                    break;
+                default:
+                    diff = -1;
+                    break;
+            }
 
-                return symOnPos !== this.emptyChar
+            pos += diff;
+
+            let symOnPos = this.element.value[pos];
+
+            while (this.specials.indexOf(symOnPos) !== -1){
+                pos += diff;
+                symOnPos = this.element.value[pos];
             }
-            else{
-                return this.element.selectionStart > this.specials[0].length
-            }
+
+            return symOnPos !== this.emptyChar && (this.element.selectionStart + diff) >= this.specials[0].length;
         }
 
         _setMinPos() {
-            if (this.emptyChar){
-                this._setPos(this.element.value.indexOf(this.emptyChar));
-            }
-            else{
-                this._setPos(this.specials[0].length);
-            }
+            let minPos = this.element.value.indexOf(this.emptyChar);
+            minPos = Math.max(minPos, this.specials[0].length);
+            this._setPos(minPos);
         }
 
         isValid(){
-            return this.element.value.length === this.pattern.length;
+            return this.element.value.replace(this.emptyChar, '').length === this.pattern.length;
         }
 
         constructor(params) {
@@ -120,8 +125,10 @@
                 el = this.element;
             
 
-            this.pattern
-                .split(PATTERN_NUMBER_SYM)
+            var splittedPattern = this.pattern.split(PATTERN_NUMBER_SYM);
+            this.numOfNumbers = splittedPattern.length - 1;
+
+            splittedPattern
                 .filter((sym, indx, arr)=> sym && arr.indexOf(sym) === indx)
                 .forEach((str, indx)=> {
                     this.specials = this.specials.concat(indx === 0 ? str : str.split(''));
@@ -148,8 +155,9 @@
 
                 switch (e.key) {
                     case 'ArrowLeft':
+                    case 'ArrowRight':
                     case 'Backspace':
-                        if (!self._isCorrectPos()) {
+                        if (!self._isCorrectPos(e.key)) {
                             e.preventDefault();
                             self._setMinPos();
                         }
@@ -158,25 +166,31 @@
             });
 
             el.addEventListener('paste', function (e) {
-                this.oldPos = this.selectionStart;
+                self.oldPos = this.selectionStart;
                 var cData = e.clipboardData;
                 var pastedText = cData.getData('text');
+                pastedText = self.filterStr(pastedText);
+
+                if (pastedText.length > self.numOfNumbers){
+                    pastedText = pastedText.slice(-self.numOfNumbers);
+                }
+                
                 e.preventDefault();
-                var newText = this.value.substr(0,this.oldPos) + pastedText + this.value.substr(this.oldPos + pastedText.length);
+                var newText = this.value.substr(0,self.oldPos) + pastedText + this.value.substr(self.oldPos + pastedText.length);
                 var newStr = self.passStr(newText);
-                var newPos = self._getNewPos(newStr, null, pastedText);
+                var newPos = self._getNewPos(newStr, null, pastedText, self.oldPos);
                 this.value = newStr;
                 self._setPos(newPos, newPos);
             });
 
             el.addEventListener('input', function (e) {
                 var newStr = self.passStr(this.value);
-                var newPos = self._getNewPos(newStr, self.lastKey);
+                var newPos = self._getNewPos(newStr, self.lastKey, null, self.oldPos);
                 this.value = newStr;
                 self._setPos(newPos, newPos);
             });
 
-            this.updateFromRaw(params.defaultRaw);
+            this.updateFromRaw('');
         }
     }
 
