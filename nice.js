@@ -1,4 +1,6 @@
 (function(){
+    const filterRegExp = /[^0-9]/g;
+    const allowedKeys = ['Delete', 'Backspace', 'ArrowLeft', 'ArrowRight', 'F5'];
     /**
      * Creates new instance of nicePhone
      * @param params {Object}
@@ -13,7 +15,7 @@
             if (str.lastIndexOf(this.specials[0]) === 0) {
                 str = str.slice(this.specials[0].length);
             }
-            str = str.replace(this.filterRegExp, '');
+            str = str.replace(filterRegExp, '');
             return str;
         }
 
@@ -82,16 +84,21 @@
             this._setPos(this.specials[0].length);
         }
 
+        isValid(){
+            return this.element.value.indexOf(this.emptyChar) === -1;
+        }
+        
         constructor(params) {
-            var self = this;
             this.element = params.element;
             this.emptyChar = params.emptyChar || '';
             this.pattern = params.pattern;
             this.lastKey = null;
-            this.filterRegExp = /[^0-9]/g;
-            this.allowedKeys = ['Delete', 'Backspace', 'ArrowLeft', 'ArrowRight', 'F5'];
             this.oldPos = 0;
             this.specials = [];
+
+            var self = this,
+                el = this.element;
+            
 
             this.pattern
                 .split('n')
@@ -100,16 +107,16 @@
                     this.specials = this.specials.concat(indx === 0 ? str : str.split(''));
                 });
 
-            this.element.addEventListener('click', function (e) {
+            el.addEventListener('click', function (e) {
                 if (!self._isCorrectPos()) {
                     self._setMinPos();
                 }
             });
 
-            this.element.addEventListener('keydown', function (e) {
+            el.addEventListener('keydown', function (e) {
                 var keyIsNumber = e.key * 1 >= 0;
 
-                if (!e.ctrlKey && self.allowedKeys.indexOf(e.key) === -1 && !keyIsNumber && !e.metaKey) {
+                if (!e.ctrlKey && allowedKeys.indexOf(e.key) === -1 && !keyIsNumber && !e.metaKey) {
                     self.lastKey = null;
                     e.preventDefault();
                     return;
@@ -130,7 +137,7 @@
                 }
             });
 
-            this.element.addEventListener('paste', function (e) {
+            el.addEventListener('paste', function (e) {
                 this.oldPos = this.selectionStart;
                 var cData = e.clipboardData;
                 var pastedText = cData.getData('text');
@@ -142,7 +149,7 @@
                 self._setPos(newPos, newPos);
             });
 
-            this.element.addEventListener('input', function (e) {
+            el.addEventListener('input', function (e) {
                 var newStr = self.passStr(this.value);
                 var newPos = self._getNewPos(newStr, self.lastKey);
                 this.value = newStr;
