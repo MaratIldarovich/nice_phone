@@ -77,17 +77,35 @@
         }
 
         _isCorrectPos() {
-            return this.element.selectionStart > this.specials[0].length
+            if (this.emptyChar){
+                let pos = this.element.selectionStart - 1;
+                let symOnPos = this.element.value[pos];
+
+                while (this.specials.indexOf(symOnPos) !== -1){
+                    pos--;
+                    symOnPos = this.element.value[pos];
+                }
+
+                return symOnPos !== this.emptyChar
+            }
+            else{
+                return this.element.selectionStart > this.specials[0].length
+            }
         }
 
         _setMinPos() {
-            this._setPos(this.specials[0].length);
+            if (this.emptyChar){
+                this._setPos(this.element.value.indexOf(this.emptyChar));
+            }
+            else{
+                this._setPos(this.specials[0].length);
+            }
         }
 
         isValid(){
             return this.element.value.indexOf(this.emptyChar) === -1;
         }
-        
+
         constructor(params) {
             this.element = params.element;
             this.emptyChar = params.emptyChar || '';
