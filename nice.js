@@ -1,8 +1,17 @@
 (function(){
-    const filterRegExp = /[^0-9]/g;
-    const allowedKeys = ['Delete', 'Backspace', 'ArrowLeft', 'ArrowRight', 'F5'];
-    const PATTERN_NUMBER_SYM = 'n';
+    const FILTER_REG_EXP = /[^0-9]/g;
+    const ALLOWED_KEYS = {
+        'Delete' : [46],
+        'Backspace' : [8],
+        'ArrowLeft' : [37],
+        'ArrowRight' : [39],
+        'F5' : [116],
+        'number' : [48,49,50,51,52,53,54,55,56,57,96,97,98,99,100,101,102,103,104,105]
 
+    };
+    const PATTERN_NUMBER_SYM = 'n';
+    const KEYS_NAMES = Object.keys(ALLOWED_KEYS);
+    
     /**
      * Creates new instance of nicePhone
      * @param params {Object}
@@ -16,7 +25,7 @@
             if (str.lastIndexOf(this.specials[0]) === 0) {
                 str = str.slice(this.specials[0].length);
             }
-            str = str.replace(filterRegExp, '');
+            str = str.replace(FILTER_REG_EXP, '');
             return str;
         }
 
@@ -45,18 +54,25 @@
             this.element.value = this.passStr(phone);
         }
 
-        _getNewPos(newStr, key, pastedText, oldPos){
-            var newPos;
+        _getNewPos(newStr, key, pastedText, curPos){
+            var newPos,
+                oldPos;
 
             switch (key){
                 case 'Backspace':
-                    newPos = oldPos - 1;
+                    oldPos = curPos + 1;
+                    newPos = curPos;
                     break;
                 case 'Delete':
-                    newPos = oldPos;
+                    newPos = curPos;
+                    oldPos = curPos;
                     break;
                 default:
-                    newPos = oldPos + ((pastedText && pastedText.length) || 1);
+                    newPos = curPos;
+                    oldPos = curPos - 1;
+                    if (pastedText){
+                        newPos += pastedText.length;
+                    }
                     break;
             }
 
@@ -74,12 +90,17 @@
             return newPos;
         }
 
+        _getPos(){
+            return this.element.selectionStart;
+        }
+        
         _setPos(pos) {
-            this.element.setSelectionRange(pos, pos);
+            this.element.selectionStart = pos;
+            this.element.selectionEnd = pos;
         }
 
-        _isCorrectPos(key) {
-            let pos = this.element.selectionStart;
+        _isCorrectPos(key, pos) {
+            pos = pos || this._getPos();
             let diff;
 
             switch(key){
@@ -100,13 +121,13 @@
                 symOnPos = this.element.value[pos];
             }
 
-            return symOnPos !== this.emptyChar && (this.element.selectionStart + diff) >= this.specials[0].length;
+            return symOnPos !== this.emptyChar && (this._getPos() + diff) >= this.specials[0].length;
         }
 
-        _setMinPos() {
+        _getMinPos() {
             let minPos = this.element.value.indexOf(this.emptyChar);
             minPos = Math.max(minPos, this.specials[0].length);
-            this._setPos(minPos);
+            return minPos;
         }
 
         isValid(){
@@ -117,8 +138,6 @@
             this.element = params.element;
             this.emptyChar = params.emptyChar || '';
             this.pattern = params.pattern;
-            this.lastKey = null;
-            this.oldPos = 0;
             this.specials = [];
 
             var self = this,
@@ -136,37 +155,47 @@
 
             el.addEventListener('click', function (e) {
                 if (!self._isCorrectPos()) {
-                    self._setMinPos();
+                    self._setPos(self._getMinPos());
                 }
             });
 
             el.addEventListener('keydown', function (e) {
-                var keyIsNumber = e.key * 1 >= 0;
+                var key = e.key;
 
-                if (!e.ctrlKey && allowedKeys.indexOf(e.key) === -1 && !keyIsNumber && !e.metaKey) {
-                    self.lastKey = null;
+                if (!key){
+                    let code = e.keyCode || e.which;
+                    KEYS_NAMES.every((keyName)=> {
+                        if (ALLOWED_KEYS[keyName].indexOf(code) !== -1){
+                            key = keyName;
+                            return false;
+                        }
+                        return true;
+                    })
+                }
+
+                var keyIsNumber = (key * 1 >= 0) || key === 'number';
+
+                if (!e.ctrlKey && KEYS_NAMES.indexOf(key) === -1 && !keyIsNumber && !e.metaKey) {
                     e.preventDefault();
                     return;
                 }
 
-                self.lastKey = e.key;
-                self.oldPos = this.selectionStart;
-                self.oldStr = this.value;
+                self.lastKey = key;
 
-                switch (e.key) {
+                switch (key) {
+                    case 'Backspace':
                     case 'ArrowLeft':
                     case 'ArrowRight':
-                    case 'Backspace':
-                        if (!self._isCorrectPos(e.key)) {
+                        if (!self._isCorrectPos(key)) {
                             e.preventDefault();
-                            self._setMinPos();
+                            self._setPos(self._getMinPos());
                         }
                         break;
                 }
             });
 
             el.addEventListener('paste', function (e) {
-                self.oldPos = this.selectionStart;
+                var curPos = self._getPos();
                 var cData = e.clipboardData;
                 var pastedText = cData.getData('text');
                 pastedText = self.filterStr(pastedText);
@@ -176,16 +205,16 @@
                 }
                 
                 e.preventDefault();
-                var newText = this.value.substr(0,self.oldPos) + pastedText + this.value.substr(self.oldPos + pastedText.length);
+                var newText = this.value.substr(0,curPos) + pastedText + this.value.substr(curPos + pastedText.length);
                 var newStr = self.passStr(newText);
-                var newPos = self._getNewPos(newStr, null, pastedText, self.oldPos);
+                var newPos = self._getNewPos(newStr, null, pastedText, curPos);
                 this.value = newStr;
                 self._setPos(newPos, newPos);
             });
 
             el.addEventListener('input', function (e) {
                 var newStr = self.passStr(this.value);
-                var newPos = self._getNewPos(newStr, self.lastKey, null, self.oldPos);
+                var newPos = self._getNewPos(newStr, self.lastKey, null, self._getPos());
                 this.value = newStr;
                 self._setPos(newPos, newPos);
             });
