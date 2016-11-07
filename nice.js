@@ -54,6 +54,27 @@
             this.element.value = this.passStr(phone);
         }
 
+        getPos(){
+            return this.element.selectionStart;
+        }
+        
+        setPos(pos) {
+            this.element.selectionStart = pos;
+            this.element.selectionEnd = pos;
+        }
+
+        setMinPos(){
+            this.setPos(this._getMinPos());
+        }
+        
+        get value(){
+            return this.element.value;
+        }
+        
+        set value(val){
+            this.updateFromRaw(val);
+        }
+
         _getNewPos(newStr, key, pastedText, curPos){
             var newPos,
                 oldPos;
@@ -91,17 +112,8 @@
             return newPos;
         }
 
-        _getPos(){
-            return this.element.selectionStart;
-        }
-        
-        _setPos(pos) {
-            this.element.selectionStart = pos;
-            this.element.selectionEnd = pos;
-        }
-
         _isCorrectPos(key, pos) {
-            pos = pos || this._getPos();
+            pos = pos || this.getPos();
             let diff;
 
             switch(key){
@@ -122,7 +134,7 @@
                 symOnPos = this.element.value[pos];
             }
 
-            return symOnPos !== this.emptyChar && (this._getPos() + diff) >= this.specials[0].length;
+            return symOnPos !== this.emptyChar && (this.getPos() + diff) >= this.specials[0].length;
         }
 
         _getMinPos() {
@@ -157,7 +169,7 @@
 
             el.addEventListener('click', function (e) {
                 if (!self._isCorrectPos()) {
-                    self._setPos(self._getMinPos());
+                    self.setPos(self._getMinPos());
                 }
             });
 
@@ -190,14 +202,14 @@
                     case 'ArrowRight':
                         if (!self._isCorrectPos(key)) {
                             e.preventDefault();
-                            self._setPos(self._getMinPos());
+                            self.setPos(self._getMinPos());
                         }
                         break;
                 }
             });
 
             el.addEventListener('paste', function (e) {
-                var curPos = self._getPos();
+                var curPos = self.getPos();
                 var cData = e.clipboardData;
                 var pastedText = cData.getData('text');
                 pastedText = self.filterStr(pastedText);
@@ -211,14 +223,14 @@
                 var newStr = self.passStr(newText);
                 var newPos = self._getNewPos(newStr, null, pastedText, curPos);
                 this.value = newStr;
-                self._setPos(newPos, newPos);
+                self.setPos(newPos, newPos);
             });
 
             el.addEventListener('input', function (e) {
                 var newStr = self.passStr(this.value);
-                var newPos = self._getNewPos(newStr, self.lastKey, null, self._getPos());
+                var newPos = self._getNewPos(newStr, self.lastKey, null, self.getPos());
                 this.value = newStr;
-                self._setPos(newPos, newPos);
+                self.setPos(newPos, newPos);
             });
 
             this.updateFromRaw('');
