@@ -6,13 +6,15 @@
     <script type="text/javascript" src="nice.js"></script>
 </head>
 <body>
-    <input type="text" id="testInput" style="font-size:20px;">
+    <input type="text"
+           id="testInput"
+           style="font-size:20px;font-family:Lucida Console, Monaco, monospace;">
 
     <script>
         var nicePhone = new NicePhone({
             element : document.getElementById('testInput'),
-            pattern : '+7 (nnn) nnn-nn-nn',
-            emptyChar : '●'
+            pattern : '+7 (nnn) nnn-nn nn',
+            emptyChar : '▓'
         });
     </script>
 </body>

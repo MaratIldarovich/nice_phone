@@ -76,16 +76,17 @@
                     break;
             }
 
-            for (let i = 0; i < this.specials.length; i++) {
-                let specStr = this.specials[i];
-
-                for (let j = oldPos; j < newPos; j++) {
+            for (let j = oldPos; j < newPos; j++) {
+                for (let i = 0; i < this.specials.length; i++) {
+                    let specStr = this.specials[i];
                     let specSymbolAhead = newStr.substr(j, specStr.length) === specStr;
                     if (specSymbolAhead) {
                         newPos = newPos + specStr.length;
                     }
                 }
             }
+
+
 
             return newPos;
         }
@@ -148,10 +149,11 @@
             this.numOfNumbers = splittedPattern.length - 1;
 
             splittedPattern
-                .filter((sym, indx, arr)=> sym && arr.indexOf(sym) === indx)
                 .forEach((str, indx)=> {
                     this.specials = this.specials.concat(indx === 0 ? str : str.split(''));
                 });
+
+            this.specials = this.specials.filter((sym, indx, arr)=> sym && arr.indexOf(sym) === indx);
 
             el.addEventListener('click', function (e) {
                 if (!self._isCorrectPos()) {
