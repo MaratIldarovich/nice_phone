@@ -75,6 +75,11 @@
             this.updateFromRaw(val);
         }
 
+        focus(){
+            this.element.focus();
+            this.setMinPos();
+        }
+
         _getNewPos(newStr, key, pastedText, curPos){
             var newPos,
                 oldPos;
