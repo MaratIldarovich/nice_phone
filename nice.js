@@ -12,14 +12,6 @@
     const PATTERN_NUMBER_SYM = 'n';
     const KEYS_NAMES = Object.keys(ALLOWED_KEYS);
     
-    /**
-     * Creates new instance of nicePhone
-     * @param params {Object}
-     * @param params.element {HTMLElement}
-     * @param params.pattern {String} - pattern of inputed phone
-     * @param params.emptyChar {String} - replace empty places in pattern
-     * @constructor
-     */
     class NicePhone {
         filterStr(str) {
             if (str.lastIndexOf(this.specials[0]) === 0) {
@@ -152,10 +144,20 @@
             return this.element.value.replace(this.emptyChar, '').length === this.pattern.length;
         }
 
+        /**
+         * Creates new instance of nicePhone
+         * @param params {Object}
+         * @param params.element {HTMLElement}
+         * @param params.pattern {String} - pattern of inputed phone
+         * @param params.emptyChar {String} - replace empty places in pattern
+         * @param params.changeCallback {Function} - invoke callback when input change.
+         * @constructor
+         */
         constructor(params) {
             this.element = params.element;
             this.emptyChar = params.emptyChar || '';
             this.pattern = params.pattern;
+            this.changeCallback = params.changeCallback || null;
             this.specials = [];
 
             var self = this,
@@ -236,6 +238,7 @@
                 var newPos = self._getNewPos(newStr, self.lastKey, null, self.getPos());
                 this.value = newStr;
                 self.setPos(newPos, newPos);
+                (typeof self.changeCallback === 'function') && self.changeCallback();
             });
 
             this.updateFromRaw('');
