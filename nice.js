@@ -43,7 +43,9 @@
 
         updateFromRaw(phone) {
             phone = phone || '';
-            this.element.value = this.passStr(phone);
+            var newVal = this.passStr(phone);
+            this.element.value = newVal;
+            (typeof this.changeCallback === 'function') && this.changeCallback(newVal, null);
         }
 
         getPos(){
@@ -231,6 +233,7 @@
                 var newPos = self._getNewPos(newStr, null, pastedText, curPos);
                 this.value = newStr;
                 self.setPos(newPos, newPos);
+                (typeof self.changeCallback === 'function') && self.changeCallback(newStr, newPos);
             });
 
             el.addEventListener('input', function (e) {
@@ -238,7 +241,7 @@
                 var newPos = self._getNewPos(newStr, self.lastKey, null, self.getPos());
                 this.value = newStr;
                 self.setPos(newPos, newPos);
-                (typeof self.changeCallback === 'function') && self.changeCallback();
+                (typeof self.changeCallback === 'function') && self.changeCallback(newStr, newPos);
             });
 
             this.updateFromRaw('');
