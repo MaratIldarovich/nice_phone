@@ -11,7 +11,7 @@
     };
     const PATTERN_NUMBER_SYM = 'n';
     const KEYS_NAMES = Object.keys(ALLOWED_KEYS);
-    
+
     class NicePhone {
         filterStr(str) {
             if (str.lastIndexOf(this.specials[0]) === 0) {
@@ -23,11 +23,12 @@
 
         passStr(userStr) {
             var str = this.filterStr(userStr);
+            var minStrLength = this.specials[0].length;
 
             var newStr = '';
 
             // если есть параметр emptyChar, полное прохождение строки с заменой n на emptyChar
-            for (let i = 0, j = 0; (i < str.length || this.emptyChar) && j < this.pattern.length; i++, j++) {
+            for (let i = 0, j = 0; ((i < (str.length || minStrLength)) || this.emptyChar) && j < this.pattern.length; i++, j++) {
                 let sym = str[i] || this.emptyChar;
 
                 while (this.pattern[j] !== PATTERN_NUMBER_SYM) {
@@ -51,7 +52,7 @@
         getPos(){
             return this.element.selectionStart;
         }
-        
+
         setPos(pos) {
             this.element.selectionStart = pos;
             this.element.selectionEnd = pos;
@@ -60,11 +61,11 @@
         setMinPos(){
             this.setPos(this._getMinPos());
         }
-        
+
         get value(){
             return this.element.value;
         }
-        
+
         set value(val){
             this.updateFromRaw(val);
         }
@@ -164,7 +165,7 @@
 
             var self = this,
                 el = this.element;
-            
+
 
             var splittedPattern = this.pattern.split(PATTERN_NUMBER_SYM);
             this.numOfNumbers = splittedPattern.length - 1;
@@ -226,7 +227,7 @@
                 if (pastedText.length > self.numOfNumbers){
                     pastedText = pastedText.slice(-self.numOfNumbers);
                 }
-                
+
                 e.preventDefault();
                 var newText = this.value.substr(0,curPos) + pastedText + this.value.substr(curPos + pastedText.length);
                 var newStr = self.passStr(newText);
