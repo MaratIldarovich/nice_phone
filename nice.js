@@ -12,10 +12,23 @@
     const KEYS_NAMES = Object.keys(ALLOWED_KEYS);
 
     class NicePhone {
-        filterStr(str) {
-            if (str.lastIndexOf(this.specials[0]) === 0) {
-                str = str.slice(this.specials[0].length);
+        deleteStartSpecSyms(str) {
+            let startSpecStr = this.specials[0];
+
+            for (let i = 0; i < startSpecStr.length; i++) {
+                if (startSpecStr[i] === str[i]) {
+                    str = str.substr(1);
+                    startSpecStr = startSpecStr.substr(1);
+                } else {
+                    break;
+                }
             }
+
+            return str;
+        }
+
+        filterStr(str) {
+            str = this.deleteStartSpecSyms(str);
             str = str.replace(FILTER_REG_EXP, '');
             return str;
         }
@@ -140,6 +153,114 @@
             return this.element.value.replace(this.emptyChar, '').length === this.pattern.length;
         }
 
+        onClick() {
+            if (!this._isCorrectPos()) {
+                this.setPos(this._getMinPos());
+            }
+        }
+
+        onKeyDown(keyboardEvent) {
+            let {key} = keyboardEvent;
+
+            if (!key) {
+                let code = keyboardEvent.keyCode || keyboardEvent.which;
+                KEYS_NAMES.every((keyName) => {
+                    if (ALLOWED_KEYS[keyName].indexOf(code) !== -1) {
+                        key = keyName;
+                        return false;
+                    }
+                    return true;
+                })
+            }
+
+            let keyIsNumber = (key * 1 >= 0) || key === 'number';
+
+            if (!keyboardEvent.ctrlKey && KEYS_NAMES.indexOf(key) === -1 && !keyIsNumber && !keyboardEvent.metaKey) {
+                keyboardEvent.preventDefault();
+                return;
+            }
+
+            this.lastKey = key;
+
+            switch (key) {
+                case 'Backspace':
+                    if (!this._isCorrectPos(key)) {
+                        keyboardEvent.preventDefault();
+                        this.backSpaceHits[1] = this.backSpaceHits[0] && !this.backSpaceHits[1] ?
+                            event.timeStamp : this.backSpaceHits[1];
+
+                        this.backSpaceHits[0] = !this.backSpaceHits[0] ?
+                            keyboardEvent.timeStamp : this.backSpaceHits[0];
+
+                        let dif = this.backSpaceHits[1] - this.backSpaceHits[0];
+
+                        if (this.backSpaceHits[1] && dif < 600) {
+                            this.destroy();
+                            this.backSpaceHits = [0, 0];
+                            this.element.value = '';
+                        }
+
+                        if (!this.backSpaceHits[1]) {
+                            setTimeout(() => {
+                                this.backSpaceHits = [0, 0];
+                            }, 650);
+                        }
+                    }
+                    break;
+                case 'ArrowLeft':
+                case 'ArrowRight':
+                    if (!this._isCorrectPos(key)) {
+                        keyboardEvent.preventDefault();
+                        this.setPos(this._getMinPos());
+                    }
+                    break;
+            }
+        }
+
+        onPaste(event) {
+            let curPos = this.getPos();
+            let {clipboardData} = event;
+            let pastedText = clipboardData.getData('text');
+            pastedText = this.filterStr(pastedText);
+
+            if (pastedText.length > this.numOfNumbers) {
+                pastedText = pastedText.slice(-this.numOfNumbers);
+            }
+
+            event.preventDefault();
+            let newText = this.element.value.substr(0, curPos) + pastedText +
+                this.element.value.substr(curPos + pastedText.length);
+            let newStr = this.passStr(newText);
+            let newPos = this._getNewPos(newStr, null, pastedText, curPos);
+            this.element.value = newStr;
+            this.setPos(newPos);
+
+            if (typeof this.changeCallback === 'function') {
+                this.changeCallback(newStr, newPos);
+            }
+        }
+
+        onInput() {
+            let newStr = this.passStr(this.element.value);
+            let newPos = this._getNewPos(newStr, this.lastKey, null, this.getPos());
+            this.element.value = newStr;
+            this.setPos(newPos);
+
+            if (typeof this.changeCallback === 'function') {
+                this.changeCallback(newStr, newPos);
+            }
+        }
+
+        destroy() {
+            Object.keys(this.events)
+                .forEach((eventName) => this.element.removeEventListener(eventName, this.events[eventName]));
+        }
+
+        start() {
+            Object.keys(this.events)
+                .forEach((eventName) => this.element.addEventListener(eventName, this.events[eventName]));
+        }
+
         /**
          * Creates new instance of nicePhone
          * @param params {Object}
@@ -155,8 +276,7 @@
             this.pattern = params.pattern;
             this.changeCallback = params.changeCallback || null;
             this.specials = [];
-
-            let el = this.element;
+            this.backSpaceHits = [];
 
             let splittedPattern = this.pattern.split(PATTERN_NUMBER_SYM);
             this.numOfNumbers = splittedPattern.length - 1;
@@ -168,76 +288,14 @@
 
             this.specials = this.specials.filter((sym, indx, arr) => sym && arr.indexOf(sym) === indx);
 
-            el.addEventListener('click', (e) => {
-                if (!this._isCorrectPos()) { this.setPos(this._getMinPos()); }
-            });
+            this.events = {
+                'click': this.onClick.bind(this),
+                'keydown': this.onKeyDown.bind(this),
+                'paste': this.onPaste.bind(this),
+                'input': this.onInput.bind(this)
+            };
 
-            el.addEventListener('keydown', (e) => {
-                let key = e.key;
-
-                if (!key) {
-                    let code = e.keyCode || e.which;
-                    KEYS_NAMES.every((keyName) => {
-                        if (ALLOWED_KEYS[keyName].indexOf(code) !== -1) {
-                            key = keyName;
-                            return false;
-                        }
-                        return true;
-                    })
-                }
-
-                let keyIsNumber = (key * 1 >= 0) || key === 'number';
-
-                if (!e.ctrlKey && KEYS_NAMES.indexOf(key) === -1 && !keyIsNumber && !e.metaKey) {
-                    e.preventDefault();
-                    return;
-                }
-
-                this.lastKey = key;
-
-                switch (key) {
-                    case 'Backspace':
-                    case 'ArrowLeft':
-                    case 'ArrowRight':
-                        if (!this._isCorrectPos(key)) {
-                            e.preventDefault();
-                            this.setPos(this._getMinPos());
-                        }
-                        break;
-                }
-            });
-
-            el.addEventListener('paste', (e) => {
-                let curPos = this.getPos();
-                let cData = e.clipboardData;
-                let pastedText = cData.getData('text');
-                pastedText = this.filterStr(pastedText);
-
-                if (pastedText.length > this.numOfNumbers) {
-                    pastedText = pastedText.slice(-this.numOfNumbers);
-                }
-
-                e.preventDefault();
-                let newText = el.value.substr(0, curPos) + pastedText + el.value.substr(curPos + pastedText.length);
-                let newStr = this.passStr(newText);
-                let newPos = this._getNewPos(newStr, null, pastedText, curPos);
-                el.value = newStr;
-                this.setPos(newPos, newPos);
-                if (typeof this.changeCallback === 'function') {
-                    this.changeCallback(newStr, newPos);
-                }
-            });
-
-            el.addEventListener('input', (e) => {
-                let newStr = this.passStr(el.value);
-                let newPos = this._getNewPos(newStr, this.lastKey, null, this.getPos());
-                el.value = newStr;
-                this.setPos(newPos, newPos);
-                if (typeof this.changeCallback === 'function') {
-                    this.changeCallback(newStr, newPos);
-                }
-            });
-
+            this.start();
             this.element.value = this.passStr('');
         }
     }
