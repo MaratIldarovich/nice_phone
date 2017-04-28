@@ -1,13 +1,12 @@
-(function(){
+(function () {
     const FILTER_REG_EXP = /[^0-9]/g;
     const ALLOWED_KEYS = {
-        'Delete' : [46],
-        'Backspace' : [8],
-        'ArrowLeft' : [37],
-        'ArrowRight' : [39],
-        'F5' : [116],
-        'number' : [48,49,50,51,52,53,54,55,56,57,96,97,98,99,100,101,102,103,104,105]
-
+        'Delete': [46],
+        'Backspace': [8],
+        'ArrowLeft': [37],
+        'ArrowRight': [39],
+        'F5': [116],
+        'number': [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105]
     };
     const PATTERN_NUMBER_SYM = 'n';
     const KEYS_NAMES = Object.keys(ALLOWED_KEYS);
@@ -22,13 +21,15 @@
         }
 
         passStr(userStr) {
-            var str = this.filterStr(userStr);
-            var minStrLength = this.specials[0].length;
+            let str = this.filterStr(userStr);
+            let minStrLength = this.specials[0].length;
 
-            var newStr = '';
+            let newStr = '';
 
             // если есть параметр emptyChar, полное прохождение строки с заменой n на emptyChar
-            for (let i = 0, j = 0; ((i < (str.length || minStrLength)) || this.emptyChar) && j < this.pattern.length; i++, j++) {
+            for (let i = 0, j = 0;
+                 ((i < (str.length || minStrLength)) || this.emptyChar) && j < this.pattern.length;
+                 i++, j++) {
                 let sym = str[i] || this.emptyChar;
 
                 while (this.pattern[j] !== PATTERN_NUMBER_SYM) {
@@ -44,12 +45,14 @@
 
         updateFromRaw(phone) {
             phone = phone || '';
-            var newVal = this.passStr(phone);
+            let newVal = this.passStr(phone);
             this.element.value = newVal;
-            (typeof this.changeCallback === 'function') && this.changeCallback(newVal, null);
+            if (typeof this.changeCallback === 'function') {
+                this.changeCallback(newVal, null);
+            }
         }
 
-        getPos(){
+        getPos() {
             return this.element.selectionStart;
         }
 
@@ -58,28 +61,20 @@
             this.element.selectionEnd = pos;
         }
 
-        setMinPos(){
+        setMinPos() {
             this.setPos(this._getMinPos());
         }
 
-        get value(){
-            return this.element.value;
-        }
-
-        set value(val){
-            this.updateFromRaw(val);
-        }
-
-        focus(){
+        focus() {
             this.element.focus();
             this.setMinPos();
         }
 
-        _getNewPos(newStr, key, pastedText, curPos){
-            var newPos,
+        _getNewPos(newStr, key, pastedText, curPos) {
+            let newPos,
                 oldPos;
 
-            switch (key){
+            switch (key) {
                 case 'Backspace':
                     oldPos = curPos + 1;
                     newPos = curPos;
@@ -91,7 +86,7 @@
                 default:
                     newPos = curPos;
                     oldPos = curPos - 1;
-                    if (pastedText){
+                    if (pastedText) {
                         newPos += pastedText.length;
                     }
                     break;
@@ -107,8 +102,6 @@
                 }
             }
 
-
-
             return newPos;
         }
 
@@ -116,7 +109,7 @@
             pos = pos || this.getPos();
             let diff;
 
-            switch(key){
+            switch (key) {
                 case 'ArrowRight':
                     diff = 1;
                     break;
@@ -129,7 +122,7 @@
 
             let symOnPos = this.element.value[pos];
 
-            while (this.specials.indexOf(symOnPos) !== -1){
+            while (this.specials.indexOf(symOnPos) !== -1) {
                 pos += diff;
                 symOnPos = this.element.value[pos];
             }
@@ -143,7 +136,7 @@
             return minPos;
         }
 
-        isValid(){
+        isValid() {
             return this.element.value.replace(this.emptyChar, '').length === this.pattern.length;
         }
 
@@ -163,33 +156,29 @@
             this.changeCallback = params.changeCallback || null;
             this.specials = [];
 
-            var self = this,
-                el = this.element;
+            let el = this.element;
 
-
-            var splittedPattern = this.pattern.split(PATTERN_NUMBER_SYM);
+            let splittedPattern = this.pattern.split(PATTERN_NUMBER_SYM);
             this.numOfNumbers = splittedPattern.length - 1;
 
             splittedPattern
-                .forEach((str, indx)=> {
+                .forEach((str, indx) => {
                     this.specials = this.specials.concat(indx === 0 ? str : str.split(''));
                 });
 
-            this.specials = this.specials.filter((sym, indx, arr)=> sym && arr.indexOf(sym) === indx);
+            this.specials = this.specials.filter((sym, indx, arr) => sym && arr.indexOf(sym) === indx);
 
-            el.addEventListener('click', function (e) {
-                if (!self._isCorrectPos()) {
-                    self.setPos(self._getMinPos());
-                }
+            el.addEventListener('click', (e) => {
+                if (!this._isCorrectPos()) { this.setPos(this._getMinPos()); }
             });
 
-            el.addEventListener('keydown', function (e) {
-                var key = e.key;
+            el.addEventListener('keydown', (e) => {
+                let key = e.key;
 
-                if (!key){
+                if (!key) {
                     let code = e.keyCode || e.which;
-                    KEYS_NAMES.every((keyName)=> {
-                        if (ALLOWED_KEYS[keyName].indexOf(code) !== -1){
+                    KEYS_NAMES.every((keyName) => {
+                        if (ALLOWED_KEYS[keyName].indexOf(code) !== -1) {
                             key = keyName;
                             return false;
                         }
@@ -197,55 +186,59 @@
                     })
                 }
 
-                var keyIsNumber = (key * 1 >= 0) || key === 'number';
+                let keyIsNumber = (key * 1 >= 0) || key === 'number';
 
                 if (!e.ctrlKey && KEYS_NAMES.indexOf(key) === -1 && !keyIsNumber && !e.metaKey) {
                     e.preventDefault();
                     return;
                 }
 
-                self.lastKey = key;
+                this.lastKey = key;
 
                 switch (key) {
                     case 'Backspace':
                     case 'ArrowLeft':
                     case 'ArrowRight':
-                        if (!self._isCorrectPos(key)) {
+                        if (!this._isCorrectPos(key)) {
                             e.preventDefault();
-                            self.setPos(self._getMinPos());
+                            this.setPos(this._getMinPos());
                         }
                         break;
                 }
             });
 
-            el.addEventListener('paste', function (e) {
-                var curPos = self.getPos();
-                var cData = e.clipboardData;
-                var pastedText = cData.getData('text');
-                pastedText = self.filterStr(pastedText);
+            el.addEventListener('paste', (e) => {
+                let curPos = this.getPos();
+                let cData = e.clipboardData;
+                let pastedText = cData.getData('text');
+                pastedText = this.filterStr(pastedText);
 
-                if (pastedText.length > self.numOfNumbers){
-                    pastedText = pastedText.slice(-self.numOfNumbers);
+                if (pastedText.length > this.numOfNumbers) {
+                    pastedText = pastedText.slice(-this.numOfNumbers);
                 }
 
                 e.preventDefault();
-                var newText = this.value.substr(0,curPos) + pastedText + this.value.substr(curPos + pastedText.length);
-                var newStr = self.passStr(newText);
-                var newPos = self._getNewPos(newStr, null, pastedText, curPos);
-                this.value = newStr;
-                self.setPos(newPos, newPos);
-                (typeof self.changeCallback === 'function') && self.changeCallback(newStr, newPos);
+                let newText = el.value.substr(0, curPos) + pastedText + el.value.substr(curPos + pastedText.length);
+                let newStr = this.passStr(newText);
+                let newPos = this._getNewPos(newStr, null, pastedText, curPos);
+                el.value = newStr;
+                this.setPos(newPos, newPos);
+                if (typeof this.changeCallback === 'function') {
+                    this.changeCallback(newStr, newPos);
+                }
             });
 
-            el.addEventListener('input', function (e) {
-                var newStr = self.passStr(this.value);
-                var newPos = self._getNewPos(newStr, self.lastKey, null, self.getPos());
-                this.value = newStr;
-                self.setPos(newPos, newPos);
-                (typeof self.changeCallback === 'function') && self.changeCallback(newStr, newPos);
+            el.addEventListener('input', (e) => {
+                let newStr = this.passStr(el.value);
+                let newPos = this._getNewPos(newStr, this.lastKey, null, this.getPos());
+                el.value = newStr;
+                this.setPos(newPos, newPos);
+                if (typeof this.changeCallback === 'function') {
+                    this.changeCallback(newStr, newPos);
+                }
             });
 
-            this.updateFromRaw('');
+            this.element.value = this.passStr('');
         }
     }
 
