@@ -1,6 +1,6 @@
 {
   "name": "nice_phone",
-  "version": "0.2.0",
+  "version": "0.3",
   "description": "Lightweight solution for decorate phone input",
   "main": "nice.js",
   "repository": {
