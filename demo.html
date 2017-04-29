@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Nice phone demo</title>
-    <script type="text/javascript" src="nice.js"></script>
+    <script type="text/javascript" src="build/nice.js"></script>
 </head>
 <body>
     <input type="text"
@@ -11,10 +11,16 @@
            style="font-size:20px;font-family:Lucida Console, Monaco, monospace;">
 
     <script>
-        var nicePhone = new NicePhone({
+        const nicePhone = new NicePhone({
             element : document.getElementById('testInput'),
             pattern : '+7 (nnn) nnn-nn nn',
-            emptyChar : 'x'
+            emptyChar : 'x',
+            changeCallback : (val, pos) => {
+              console.log(val, pos)
+            },
+            successCallback : () => {
+              alert('success');
+            }
         });
     </script>
 </body>
