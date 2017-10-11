@@ -99,9 +99,11 @@ class NicePhone {
                 break;
             default:
                 newPos = curPos;
-                oldPos = curPos - 1;
                 if (pastedText) {
                     newPos += pastedText.length;
+                    oldPos = curPos;
+                } else {
+                    oldPos = curPos - 1;
                 }
                 break;
         }
@@ -189,24 +191,26 @@ class NicePhone {
             case 'Backspace':
                 if (!this._isCorrectPos(key)) {
                     keyboardEvent.preventDefault();
-                    this.backSpaceHits[1] = this.backSpaceHits[0] && !this.backSpaceHits[1] ?
+                    if (this.canDestroyMask) {
+                        this.backSpaceHits[1] = this.backSpaceHits[0] && !this.backSpaceHits[1] ?
                         event.timeStamp : this.backSpaceHits[1];
-
-                    this.backSpaceHits[0] = !this.backSpaceHits[0] ?
+                        
+                        this.backSpaceHits[0] = !this.backSpaceHits[0] ?
                         keyboardEvent.timeStamp : this.backSpaceHits[0];
-
-                    let dif = this.backSpaceHits[1] - this.backSpaceHits[0];
-
-                    if (this.backSpaceHits[1] && dif < 600) {
-                        this.destroyMask();
-                        this.backSpaceHits = [0, 0];
-                        this.element.value = '';
-                    }
-
-                    if (!this.backSpaceHits[1]) {
-                        setTimeout(() => {
+                        
+                        let dif = this.backSpaceHits[1] - this.backSpaceHits[0];
+                        
+                        if (this.backSpaceHits[1] && dif < 600) {
+                            this.destroyMask();
                             this.backSpaceHits = [0, 0];
-                        }, 650);
+                            this.element.value = '';
+                        }
+                        
+                        if (!this.backSpaceHits[1]) {
+                            setTimeout(() => {
+                                       this.backSpaceHits = [0, 0];
+                                       }, 650);
+                        }
                     }
                 }
                 break;
@@ -289,11 +293,7 @@ class NicePhone {
         this.pattern = params.pattern;
         this.changeCallback = params.changeCallback || null;
         this.successCallback = params.successCallback || null;
-        if (typeof params.canDestroyMask === 'undefined') {
-            this.canDestroyMask = true;
-        } else {
-            this.canDestroyMask = params.canDestroyMask;
-        }
+        this.canDestroyMask = params.canDestroyMask;
         this.specials = [];
         this.backSpaceHits = [];
         this.destroyed = false;
